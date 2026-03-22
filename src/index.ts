@@ -102,26 +102,31 @@ server.registerTool(
   "get-plant-data",
   {
     description:
-      "Get histogram/time-series data for a single plant. " +
-      "Constraints: intra-day intervals (15m/30m) max 7-day span; max 30-day lookback.",
+      "Get data for a single plant. " +
+      "interval=live: returns latest reading, no start/end needed. " +
+      "interval=1m: raw 1-min data, max 10-min span, 7-day lookback. " +
+      "interval=5m/15m/30m/1h: max 7-day span. " +
+      "interval=1d/1M/1y: max 30-day lookback.",
     inputSchema: {
       plant_no: z.string().describe("Plant number, e.g. 'DEMO-01'"),
+      interval: z
+        .enum(["live", "1m", "5m", "15m", "30m", "1h", "1d", "1M", "1y"])
+        .describe("Data resolution. Use 'live' for latest reading (no start/end required)."),
       start: z
         .string()
-        .describe("Start of time range in ISO-8601 format, e.g. '2026-03-01T00:00:00+08:00'"),
+        .optional()
+        .describe("Start of time range in ISO-8601 format, e.g. '2026-03-01T00:00:00+08:00'. Not required for interval=live."),
       end: z
         .string()
-        .describe("End of time range in ISO-8601 format, e.g. '2026-03-17T23:59:59+08:00'"),
-      interval: z
-        .enum(["15m", "30m", "1h", "1d", "1M", "1y"])
-        .describe("Data resolution: 15m, 30m, 1h, 1d, 1M, or 1y."),
+        .optional()
+        .describe("End of time range in ISO-8601 format. Not required for interval=live."),
     },
   },
-  async ({ plant_no, start, end, interval }) => {
+  async ({ plant_no, interval, start, end }) => {
     const data = await thingnarioGet(`${BASE}/plants/${plant_no}/data`, {
+      interval,
       start,
       end,
-      interval,
     });
     return { content: [{ type: "text", text: toText(data) }] };
   }
@@ -131,25 +136,24 @@ server.registerTool(
   "get-inverter-data",
   {
     description:
-      "Get histogram/time-series data for one or more inverter devices. " +
-      "device_nos accepts a comma-separated list. " +
-      "Same time-range constraints as get-plant-data.",
+      "Get data for one or more inverter devices (comma-separated). " +
+      "Same interval and time-range constraints as get-plant-data.",
     inputSchema: {
       device_nos: z
         .string()
         .describe("Comma-separated inverter device numbers, e.g. 'INV001,INV002'"),
-      start: z.string().describe("Start of time range in ISO-8601 format"),
-      end: z.string().describe("End of time range in ISO-8601 format"),
       interval: z
-        .enum(["15m", "30m", "1h", "1d", "1M", "1y"])
-        .describe("Data resolution interval"),
+        .enum(["live", "1m", "5m", "15m", "30m", "1h", "1d", "1M", "1y"])
+        .describe("Data resolution. Use 'live' for latest reading (no start/end required)."),
+      start: z.string().optional().describe("Start of time range in ISO-8601 format. Not required for interval=live."),
+      end: z.string().optional().describe("End of time range in ISO-8601 format. Not required for interval=live."),
     },
   },
-  async ({ device_nos, start, end, interval }) => {
+  async ({ device_nos, interval, start, end }) => {
     const data = await thingnarioGet(`${BASE}/inverters/${device_nos}/data`, {
+      interval,
       start,
       end,
-      interval,
     });
     return { content: [{ type: "text", text: toText(data) }] };
   }
@@ -159,22 +163,22 @@ server.registerTool(
   "get-meter-data",
   {
     description:
-      "Get histogram/time-series data for one or more meter devices. " +
-      "Same time-range and interval constraints as get-plant-data.",
+      "Get data for one or more meter devices (comma-separated). " +
+      "Same interval and time-range constraints as get-plant-data.",
     inputSchema: {
       device_nos: z.string().describe("Comma-separated meter device numbers"),
-      start: z.string().describe("Start of time range in ISO-8601 format"),
-      end: z.string().describe("End of time range in ISO-8601 format"),
       interval: z
-        .enum(["15m", "30m", "1h", "1d", "1M", "1y"])
-        .describe("Data resolution interval"),
+        .enum(["live", "1m", "5m", "15m", "30m", "1h", "1d", "1M", "1y"])
+        .describe("Data resolution. Use 'live' for latest reading (no start/end required)."),
+      start: z.string().optional().describe("Start of time range in ISO-8601 format. Not required for interval=live."),
+      end: z.string().optional().describe("End of time range in ISO-8601 format. Not required for interval=live."),
     },
   },
-  async ({ device_nos, start, end, interval }) => {
+  async ({ device_nos, interval, start, end }) => {
     const data = await thingnarioGet(`${BASE}/meters/${device_nos}/data`, {
+      interval,
       start,
       end,
-      interval,
     });
     return { content: [{ type: "text", text: toText(data) }] };
   }
@@ -184,22 +188,22 @@ server.registerTool(
   "get-stringmeter-data",
   {
     description:
-      "Get histogram/time-series data for one or more string meter devices. " +
-      "Same time-range and interval constraints as get-plant-data.",
+      "Get data for one or more string meter devices (comma-separated). " +
+      "Same interval and time-range constraints as get-plant-data.",
     inputSchema: {
       device_nos: z.string().describe("Comma-separated string meter device numbers"),
-      start: z.string().describe("Start of time range in ISO-8601 format"),
-      end: z.string().describe("End of time range in ISO-8601 format"),
       interval: z
-        .enum(["15m", "30m", "1h", "1d", "1M", "1y"])
-        .describe("Data resolution interval"),
+        .enum(["live", "1m", "5m", "15m", "30m", "1h", "1d", "1M", "1y"])
+        .describe("Data resolution. Use 'live' for latest reading (no start/end required)."),
+      start: z.string().optional().describe("Start of time range in ISO-8601 format. Not required for interval=live."),
+      end: z.string().optional().describe("End of time range in ISO-8601 format. Not required for interval=live."),
     },
   },
-  async ({ device_nos, start, end, interval }) => {
+  async ({ device_nos, interval, start, end }) => {
     const data = await thingnarioGet(`${BASE}/stringmeters/${device_nos}/data`, {
+      interval,
       start,
       end,
-      interval,
     });
     return { content: [{ type: "text", text: toText(data) }] };
   }
