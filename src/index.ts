@@ -103,28 +103,24 @@ server.registerTool(
   {
     description:
       "Get histogram/time-series data for a single plant. " +
-      "Constraints: intra-day intervals (live/1m/5m/15m/30m) max 7-day span; " +
-      "historical raw data max 10-min span; max 30-day lookback.",
+      "Constraints: intra-day intervals (15m/30m) max 7-day span; max 30-day lookback.",
     inputSchema: {
       plant_no: z.string().describe("Plant number, e.g. 'DEMO-01'"),
-      time_start: z
+      start: z
         .string()
         .describe("Start of time range in ISO-8601 format, e.g. '2026-03-01T00:00:00+08:00'"),
-      time_end: z
+      end: z
         .string()
         .describe("End of time range in ISO-8601 format, e.g. '2026-03-17T23:59:59+08:00'"),
       interval: z
-        .enum(["live", "1m", "5m", "15m", "30m", "1h", "1d", "1M"])
-        .describe(
-          "Data resolution: live, 1m, 5m, 15m, 30m, 1h, 1d, or 1M. " +
-            "Intra-day intervals require time span ≤ 7 days."
-        ),
+        .enum(["15m", "30m", "1h", "1d", "1M", "1y"])
+        .describe("Data resolution: 15m, 30m, 1h, 1d, 1M, or 1y."),
     },
   },
-  async ({ plant_no, time_start, time_end, interval }) => {
+  async ({ plant_no, start, end, interval }) => {
     const data = await thingnarioGet(`${BASE}/plants/${plant_no}/data`, {
-      time_start,
-      time_end,
+      start,
+      end,
       interval,
     });
     return { content: [{ type: "text", text: toText(data) }] };
@@ -142,17 +138,17 @@ server.registerTool(
       device_nos: z
         .string()
         .describe("Comma-separated inverter device numbers, e.g. 'INV001,INV002'"),
-      time_start: z.string().describe("Start of time range in ISO-8601 format"),
-      time_end: z.string().describe("End of time range in ISO-8601 format"),
+      start: z.string().describe("Start of time range in ISO-8601 format"),
+      end: z.string().describe("End of time range in ISO-8601 format"),
       interval: z
-        .enum(["live", "1m", "5m", "15m", "30m", "1h", "1d", "1M"])
+        .enum(["15m", "30m", "1h", "1d", "1M", "1y"])
         .describe("Data resolution interval"),
     },
   },
-  async ({ device_nos, time_start, time_end, interval }) => {
+  async ({ device_nos, start, end, interval }) => {
     const data = await thingnarioGet(`${BASE}/inverters/${device_nos}/data`, {
-      time_start,
-      time_end,
+      start,
+      end,
       interval,
     });
     return { content: [{ type: "text", text: toText(data) }] };
@@ -167,17 +163,17 @@ server.registerTool(
       "Same time-range and interval constraints as get-plant-data.",
     inputSchema: {
       device_nos: z.string().describe("Comma-separated meter device numbers"),
-      time_start: z.string().describe("Start of time range in ISO-8601 format"),
-      time_end: z.string().describe("End of time range in ISO-8601 format"),
+      start: z.string().describe("Start of time range in ISO-8601 format"),
+      end: z.string().describe("End of time range in ISO-8601 format"),
       interval: z
-        .enum(["live", "1m", "5m", "15m", "30m", "1h", "1d", "1M"])
+        .enum(["15m", "30m", "1h", "1d", "1M", "1y"])
         .describe("Data resolution interval"),
     },
   },
-  async ({ device_nos, time_start, time_end, interval }) => {
+  async ({ device_nos, start, end, interval }) => {
     const data = await thingnarioGet(`${BASE}/meters/${device_nos}/data`, {
-      time_start,
-      time_end,
+      start,
+      end,
       interval,
     });
     return { content: [{ type: "text", text: toText(data) }] };
@@ -192,17 +188,17 @@ server.registerTool(
       "Same time-range and interval constraints as get-plant-data.",
     inputSchema: {
       device_nos: z.string().describe("Comma-separated string meter device numbers"),
-      time_start: z.string().describe("Start of time range in ISO-8601 format"),
-      time_end: z.string().describe("End of time range in ISO-8601 format"),
+      start: z.string().describe("Start of time range in ISO-8601 format"),
+      end: z.string().describe("End of time range in ISO-8601 format"),
       interval: z
-        .enum(["live", "1m", "5m", "15m", "30m", "1h", "1d", "1M"])
+        .enum(["15m", "30m", "1h", "1d", "1M", "1y"])
         .describe("Data resolution interval"),
     },
   },
-  async ({ device_nos, time_start, time_end, interval }) => {
+  async ({ device_nos, start, end, interval }) => {
     const data = await thingnarioGet(`${BASE}/stringmeters/${device_nos}/data`, {
-      time_start,
-      time_end,
+      start,
+      end,
       interval,
     });
     return { content: [{ type: "text", text: toText(data) }] };
@@ -220,14 +216,21 @@ server.registerTool(
       plant_nos: z
         .string()
         .describe("Comma-separated plant numbers, e.g. 'DEMO-01,DEMO-02'"),
-      time_start: z.string().describe("Start of time range in ISO-8601 format"),
-      time_end: z.string().describe("End of time range in ISO-8601 format"),
+      start: z.string().describe("Start of time range in ISO-8601 format"),
+      end: z.string().describe("End of time range in ISO-8601 format"),
+      type: z
+        .enum(["open", "closed"])
+        .optional()
+        .describe("Filter by event status: 'open' (current) or 'closed' (history)"),
+      category: z.string().optional().describe("Optional event category filter"),
     },
   },
-  async ({ plant_nos, time_start, time_end }) => {
+  async ({ plant_nos, start, end, type, category }) => {
     const data = await thingnarioGet(`${BASE}/plants/${plant_nos}/events`, {
-      time_start,
-      time_end,
+      start,
+      end,
+      type,
+      category,
     });
     return { content: [{ type: "text", text: toText(data) }] };
   }
